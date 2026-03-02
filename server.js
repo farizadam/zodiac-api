@@ -15,9 +15,11 @@ let dbConnected = false;
 // LIGHTWEIGHT ROUTES (No auth, no DB, no credits)
 // ============================================
 
-// Simple ping - zero cost, prevents cold starts
+// Simple ping - zero cost, prevents cold starts (v2)
 app.get("/ping", (req, res) => {
-  res.status(200).json({ status: "ok", timestamp: Date.now() });
+  res
+    .status(200)
+    .json({ status: "ok", timestamp: Date.now(), version: "1.0.1" });
 });
 
 // Health check with optional DB status
@@ -409,4 +411,3 @@ if (process.env.NODE_ENV !== "production") {
 
 // Export for Vercel
 module.exports = app;
-
