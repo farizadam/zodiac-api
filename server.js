@@ -3,6 +3,9 @@ const axios = require("axios");
 const crypto = require("crypto");
 require("dotenv").config();
 
+// API Version - change this to force cache invalidation
+const API_VERSION = "1.0.2";
+
 const { connectDB, getDB, closeDB } = require("./db");
 
 const app = express();
@@ -15,11 +18,20 @@ let dbConnected = false;
 // LIGHTWEIGHT ROUTES (No auth, no DB, no credits)
 // ============================================
 
+// Root route - shows API info
+app.get("/", (req, res) => {
+  res.status(200).json({
+    name: "Zodiac Guard API",
+    version: API_VERSION,
+    endpoints: ["/ping", "/health", "/v1/check", "/v1/usage"],
+  });
+});
+
 // Simple ping - zero cost, prevents cold starts (v2)
 app.get("/ping", (req, res) => {
   res
     .status(200)
-    .json({ status: "ok", timestamp: Date.now(), version: "1.0.1" });
+    .json({ status: "ok", timestamp: Date.now(), version: API_VERSION });
 });
 
 // Health check with optional DB status
