@@ -6,6 +6,9 @@ node_modules/
 .env.local
 .env.*.local
 
+# Test files with credentials
+test.js
+
 # Logs
 logs/
 *.log

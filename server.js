@@ -8,6 +8,21 @@ const { connectDB, getDB, closeDB } = require("./db");
 const app = express();
 app.use(express.json());
 
+// For Vercel serverless: connect DB on each request if not connected
+let dbConnected = false;
+app.use(async (req, res, next) => {
+  if (!dbConnected) {
+    try {
+      await connectDB();
+      dbConnected = true;
+    } catch (error) {
+      console.error("DB connection failed:", error);
+      return res.status(500).json({ error: "Database connection failed" });
+    }
+  }
+  next();
+});
+
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 const GROQ_URL =
   process.env.GROQ_URL || "https://api.groq.com/openai/v1/chat/completions";
@@ -334,18 +349,23 @@ process.on("SIGINT", async () => {
   process.exit(0);
 });
 
-async function start() {
-  try {
-    await connectDB();
-    console.log("Connected to MongoDB");
+// For local development
+if (process.env.NODE_ENV !== "production") {
+  async function start() {
+    try {
+      await connectDB();
+      console.log("Connected to MongoDB");
 
-    app.listen(PORT, () => {
-      console.log(`Zodiac Guard API running on http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
+      app.listen(PORT, () => {
+        console.log(`Zodiac Guard API running on http://localhost:${PORT}`);
+      });
+    } catch (error) {
+      console.error("Failed to start server:", error);
+      process.exit(1);
+    }
   }
+  start();
 }
 
-start();
+// Export for Vercel
+module.exports = app;
