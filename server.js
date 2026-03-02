@@ -8,8 +8,48 @@ const { connectDB, getDB, closeDB } = require("./db");
 const app = express();
 app.use(express.json());
 
-// For Vercel serverless: connect DB on each request if not connected
+// DB connection state
 let dbConnected = false;
+
+// ============================================
+// LIGHTWEIGHT ROUTES (No auth, no DB, no credits)
+// ============================================
+
+// Simple ping - zero cost, prevents cold starts
+app.get("/ping", (req, res) => {
+  res.status(200).json({ status: "ok", timestamp: Date.now() });
+});
+
+// Health check with optional DB status
+app.get("/health", async (req, res) => {
+  const health = {
+    status: "ok",
+    timestamp: Date.now(),
+    uptime: process.uptime(),
+    db: "unknown",
+  };
+
+  try {
+    if (dbConnected) {
+      const db = getDB();
+      await db.command({ ping: 1 });
+      health.db = "connected";
+    } else {
+      health.db = "not_connected";
+    }
+  } catch (error) {
+    health.db = "error";
+    health.dbError = error.message;
+  }
+
+  res.status(200).json(health);
+});
+
+// ============================================
+// DB CONNECTION MIDDLEWARE (for protected routes)
+// ============================================
+
+// For Vercel serverless: connect DB on each request if not connected
 app.use(async (req, res, next) => {
   if (!dbConnected) {
     try {
@@ -369,3 +409,4 @@ if (process.env.NODE_ENV !== "production") {
 
 // Export for Vercel
 module.exports = app;
+
